@@ -1,0 +1,197 @@
+from flask import Flask, render_template, request, jsonify
+
+app = Flask(__name__)
+
+# Define available operation flows and their modules
+flow_modules = {
+    "operation_flow_1": ["subject_owner_details", "subject_run_config", "readiness", "orchestrator1","metric_calculator","decision_maker","orchestrator2","communicator"]
+}
+
+
+# Sample Table Names for Snowflake Tab
+available_tables = [
+    "Customer_Transaction_History_2024",
+    "Product_Sales_Region_Wise_Analysis",
+    "User_Engagement_Metrics_Dashboard",
+    "Financial_Reporting_Quarterly_2023",
+    "Marketing_Campaign_Performance_Data",
+    "Inventory_Stock_Level_Monitoring",
+    "Website_User_Behavior_Tracking",
+    "Human_Resources_Employee_Records",
+    "Ecommerce_Order_Fulfillment_Status",
+    "Supply_Chain_Operational_Efficiency",
+    "Customer_Feedback_Sentiment_Analysis",
+    "Social_Media_Ad_Campaign_Insights",
+    "Product_Returns_Reason_Analysis",
+    "IT_Infrastructure_Maintenance_Logs",
+    "Sales_Target_Vs_Achievement_Report",
+    "Vendor_Contract_Management_System",
+    "Logistics_Transport_Route_Optimization",
+    "Customer_Loyalty_Program_Statistics",
+    "Retail_Store_Footfall_Traffic_Data",
+    "Energy_Consumption_Monitoring_System",
+    "Fraud_Detection_Transaction_Records",
+    "Healthcare_Patient_Appointment_Schedule",
+    "Education_Student_Performance_Tracking",
+    "Government_Public_Services_Usage_Report",
+    "Banking_Loan_Approval_Application_Data"
+]
+
+
+@app.route('/')
+def index():
+    """Landing Page with Operational Flow Options"""
+    return render_template('index.html', flow_modules=flow_modules)
+
+@app.route('/enrollment/<operation_flow>')
+def enrollment(operation_flow):
+    """Render Enrollment Page with Only Selected Modules"""
+    selected_modules = flow_modules.get(operation_flow, [])
+
+    if not selected_modules:
+        return "Invalid Operation Flow", 404
+
+    return render_template('enrollment.html', modules=selected_modules, operation_flow=operation_flow, available_tables=available_tables)
+
+@app.route('/submit_enrollment', methods=['POST'])
+def submit_enrollment():
+    """Prints received data module-wise to the terminal"""
+    data = request.json
+
+    print("\n Received Enrollment Data:")
+
+    #  Subject Owner Details
+    if "subject_owner_details" in data:
+        print("\n Subject Owner Details:")
+        owner = data["subject_owner_details"]
+        print(f"  First Name: {owner['first_name']}")
+        print(f"  Last Name: {owner['last_name']}")
+        print(f"  ZID: {owner['zid']}")
+        print(f"  Owner Email: {owner['owner_email']}\n")
+
+    # Subject Run Config
+    if "subject_run_config" in data:
+        print("\n Subject Run Config:")
+        config = data["subject_run_config"]
+        print(f"  Frequency: {config['frequency']}")
+
+        # Handle Weekly Day Number (only if Weekly is selected)
+        if config["frequency"] == "Weekly":
+            print(f"  Weekly Day Number: {config['weekly_day_number']}")
+
+        # Handle Monthly Day Number (only if Monthly Calendar/Business Days is selected)
+        if config["frequency"] in ["Monthly_Calendar", "Monthly_Business"]:
+            print(f"  Monthly Day Number: {config['monthly_day_number']}")
+
+
+    #  Readiness Module
+    if "readiness" in data:
+        readiness = data["readiness"]
+
+        # Snowflake Section
+        if "snowflake" in readiness:
+            print("\n Readiness - Snowflake:")
+            for index, table in enumerate(readiness["snowflake"], start=1):
+                print(f"  [{index}] Table Name: {table}")
+
+        # Metadata Section
+        if "metadata" in readiness:
+            print("\n Readiness - Metadata:")
+            for index, entry in enumerate(readiness["metadata"], start=1):
+                print(f"  [{index}] Script Execution: {entry['script_execution']}")
+                print(f"      Role: {entry['role']}")
+                print(f"      Database: {entry['db']}")
+                print(f"      Schema: {entry['schema']}")
+                print(f"      Grant Access: {entry['grant_access']}")
+
+        # Scheduler Section
+        if "scheduler" in readiness:
+            print("\n Readiness - Scheduler:")
+            print(f"  Type: {readiness['scheduler']['type']}")
+            print(f"  Time: {readiness['scheduler']['time']}\n")
+
+    #  Orchestrator1 Module
+    if "orchestrator1" in data:
+        orchestrator = data["orchestrator1"]
+
+        # Nucleus Section
+        if "nucleus" in orchestrator:
+            print("\n Orchestrator1 - Nucleus:")
+            for index, entry in enumerate(orchestrator["nucleus"], start=1):
+                print(f"  [{index}] Procedure/View Name: {entry['procedure_view']}")
+                print(f"      Database: {entry['db']}")
+                print(f"      Schema: {entry['schema']}")
+                print(f"      Role: {entry['role']}")
+                print(f"      Grant Access to SVC: {entry['grant_access_svc']}")
+
+        # dbt Section
+        if "dbt" in orchestrator:
+            print("\n Orchestrator1 - dbt:")
+            for index, entry in enumerate(orchestrator["dbt"], start=1):
+                print(f"  [{index}] API Key: {entry['api_key']}")
+                print(f"      Account ID: {entry['account_id']}")
+                print(f"      Job ID: {entry['job_id']}")
+
+        # Posit Section
+        if "posit" in orchestrator:
+            print("\n Orchestrator1 - Posit:")
+            for index, entry in enumerate(orchestrator["posit"], start=1):
+                print(f"  [{index}] Grant Access: {entry['grant_access']}")
+                print(f"      Content URL: {entry['content_url']}")
+
+    #  Metric Calculator Module
+    if "metric_calculator" in data:
+        print("\n Metric Calculator Data:")
+        for index, entry in enumerate(data["metric_calculator"], start=1):
+            print(f"  [{index}] Script Execution: {entry['script_execution']}")
+            print(f"      Role: {entry['role']}")
+            print(f"      Database: {entry['db']}")
+            print(f"      Schema: {entry['schema']}")
+            print(f"      Grant Access: {entry['grant_access']}")
+
+    #  Orchestrator2 Module
+    if "orchestrator2" in data:
+        orchestrator2 = data["orchestrator2"]
+
+        # PBI Refresher Section
+        if "pbi_refresher" in orchestrator2:
+            print("\n Orchestrator2 - PBI Refresher:")
+            for index, entry in enumerate(orchestrator2["pbi_refresher"], start=1):
+                print(f"  [{index}] Group ID: {entry['group_id']}")
+                print(f"      Dataset ID: {entry['dataset_id']}")
+
+        # Nucleus Section
+        if "nucleus" in orchestrator2:
+            print("\n Orchestrator2 - Nucleus:")
+            for index, entry in enumerate(orchestrator2["nucleus"], start=1):
+                print(f"  [{index}] Procedure/View Name: {entry['procedure_view']}")
+                print(f"      Database: {entry['db']}")
+                print(f"      Schema: {entry['schema']}")
+                print(f"      Role: {entry['role']}")
+                print(f"      Grant Access to SVC: {entry['grant_access_svc']}")
+
+        # dbt Section
+        if "dbt" in orchestrator2:
+            print("\n Orchestrator2 - dbt:")
+            for index, entry in enumerate(orchestrator2["dbt"], start=1):
+                print(f"  [{index}] API Key: {entry['api_key']}")
+                print(f"      Account ID: {entry['account_id']}")
+                print(f"      Job ID: {entry['job_id']}")
+
+        # Posit Section
+        if "posit" in orchestrator2:
+            print("\n Orchestrator2 - Posit:")
+            for index, entry in enumerate(orchestrator2["posit"], start=1):
+                print(f"  [{index}] Grant Access: {entry['grant_access']}")
+                print(f"      Content URL: {entry['content_url']}")
+
+    #  Communicator Module
+    if "communicator" in data:
+        print("\n Communicator Data:")
+        print(f"  Recipients: {data['communicator']['recipients']}\n")
+
+    return jsonify({"status": "success", "message": "Data received successfully!"})
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
