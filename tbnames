@@ -1,0 +1,36 @@
+import snowflake.connector
+
+def get_sorted_column_values(snowflake_conn, table_name, column_name, database, schema):
+    """
+    Fetches distinct values from a specified column in a Snowflake table and returns them as a sorted list.
+
+    :param snowflake_conn: Existing Snowflake connection object
+    :param table_name: Name of the table
+    :param column_name: Name of the column to fetch data from
+    :param database: Snowflake database name
+    :param schema: Snowflake schema name
+    :return: List of column values sorted in ascending order
+    """
+    try:
+        cursor = snowflake_conn.cursor()
+        query = f"""
+            SELECT DISTINCT {column_name} 
+            FROM {database}.{schema}.{table_name} 
+            ORDER BY {column_name} ASC;
+        """
+        cursor.execute(query)
+        
+        # Fetch data as a list
+        result = [row[0] for row in cursor.fetchall()]
+        
+        cursor.close()
+        return result
+    
+    except Exception as e:
+        print(f"Error fetching data: {e}")
+        return []
+
+# Example Usage:
+# Assuming `conn` is your active Snowflake connection
+# sorted_values = get_sorted_column_values(conn, "my_table", "my_column", "MY_DATABASE", "MY_SCHEMA")
+# print(sorted_values)
