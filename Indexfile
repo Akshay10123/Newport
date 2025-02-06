@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <style>
+        .readiness-btn, .orchestration-btn, .metric-btn, .decision-btn, .communication-btn {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            /* font-weight: bold; */
+            text-align: center;
+            margin: 1px;
+            transition: background 0.3s;
+        }
+
+        /* Specific Button Colors */
+        .readiness-btn {
+            background: #007bff;
+            color: white;
+        }
+        .readiness-btn:hover {
+            background: #0056b3;
+        }
+
+        .orchestration-btn {
+            background: #6c757d;
+            color: white;
+        }
+        .orchestration-btn:hover {
+            background: #545b62;
+        }
+
+        .metric-btn {
+            background: #17a2b8;
+            color: white;
+        }
+        .metric-btn:hover {
+            background: #117a8b;
+        }
+
+        .decision-btn {
+            background: #ffc107;
+            color: black;
+        }
+        .decision-btn:hover {
+            background: #e0a800;
+        }
+
+        .communication-btn {
+            background: #28a745;
+            color: white;
+        }
+        .communication-btn:hover {
+            background: #218838;
+        }
+    </style>
+    <div class="container mt-4">
+        <h2 class="text-center">Enrollment Portal</h2>
+
+
+        <!-- Operational Flows Section -->
+        <!-- <h3 class="text-center mt-4">Operational Flows</h3> -->
+        <p class="text-center">Select an operational flow to proceed:</p>
+
+        <div class="container">
+            <!-- Tile 1 -->
+            <div class="box-container" >
+                <div class="tile">
+                    <h5><a href="{{ url_for('enrollment', operation_flow='operation_flow_1') }}"> UNVALIDATED REPORT DELIVERY</a></h5>
+                    <div class="buttons">
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="readiness-btn">READINESS</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="orchestration-btn">ORCHESTRATION2</a>        
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="communication-btn">COMMUNICATION</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tile 2 -->
+            <div class="box-container">
+                <div class="tile">
+                    <h5><a href="{{ url_for('enrollment', operation_flow='operation_flow_2') }}">ANALYTIC METRIC COMMUNICATION</a></h5>
+                    <div class="buttons">
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="readiness-btn">READINESS</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="metric-btn">METRIC CALCULATION</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="communication-btn">COMMUNICATION</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tile 3 -->
+            <div class="box-container">
+                <div class="tile">
+                    <h5><a href="{{ url_for('enrollment', operation_flow='operation_flow_3') }}">ORCHESTRATION WITH PULSAR METRICS</a></h5>
+                    <div class="buttons">
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="readiness-btn">READINESS</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="metric-btn">METRIC CALCULATION</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="decision-btn">DECISION MAKER</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="orchestration-btn">ORCHESTRATION2</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="communication-btn">COMMUNICATION</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tile 4 -->
+            <div class="box-container">
+                <div class="tile">
+                    <h5><a href="{{ url_for('enrollment', operation_flow='operation_flow_4') }}">VALIDATION METRIC COMMUNICATION</a></h5>
+                    <div class="buttons">
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="readiness-btn">READINESS</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="metric-btn">METRIC CALCULATION</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="decision-btn">DECISION MAKER</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="communication-btn">COMMUNICATION</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tile 5 -->
+            <div class="box-container">
+                <div class="tile">
+                    <h5><a href="{{ url_for('enrollment', operation_flow='operation_flow_5') }}">ORCHESTRATION WITH VALIDATION</a></h5>
+                    <div class="buttons">
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="readiness-btn">READINESS</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="orchestration-btn">ORCHESTRATION1</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="metric-btn">METRIC CALCULATION</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="decision-btn">DECISION MAKER</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="communication-btn">COMMUNICATION</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tile 6 -->
+            <div class="box-container">
+                <div class="tile">
+                    <h5><a href="{{ url_for('enrollment', operation_flow='operation_flow_6') }}">EXTERNAL METRICS VALIDATED ORCHESTRATION</a></h5>
+                    <div class="buttons">
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="readiness-btn">READINESS</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="orchestration-btn">ORCHESTRATION1</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="metric-btn">METRIC CALCULATION</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="decision-btn">DECISION MAKER</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="orchestration-btn">ORCHESTRATION2</a>
+                        <a href="https://github.com/Akshay10123/Newport" target="_blank" class="communication-btn">COMMUNICATION</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
