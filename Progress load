@@ -1,0 +1,70 @@
+import concurrent.futures
+import time
+from flask import Flask, render_template, request, jsonify
+import akshaypy  # Import the custom API package
+
+app = Flask(__name__)
+
+# Store API logs
+api_logs = []
+
+def log_status(message):
+    """Function to log status updates"""
+    api_logs.append(message)
+    print(message)
+
+def call_api(module_name, api_instance, payload):
+    """Function to call API and handle logging"""
+    log_status(f"Running {module_name} ⏳")
+    try:
+        response = api_instance.call_endpoint(payload)
+        log_status(f"{module_name} ✅ Completed")
+        return response
+    except Exception as e:
+        log_status(f"{module_name} ❌ Failed - {str(e)}")
+        return None
+
+@app.route('/submit_enrollment', methods=['POST'])
+def submit_enrollment():
+    """Handles form submission and executes API calls in order"""
+    global api_logs
+    api_logs = []  # Reset logs
+    data = request.json
+
+    # Extract values from form submission
+    subject_id = data.get("subject_id")
+    subject_owner_details = {
+        "SUBJECT_ID": subject_id,
+        "OWNER_FIRST_NAME": data["subject_owner_details"]["first_name"],
+        "OWNER_LAST_NAME": data["subject_owner_details"]["last_name"],
+        "OWNER_ZID": data["subject_owner_details"]["zid"],
+        "OWNER_EMAIL": data["subject_owner_details"]["owner_email"],
+        "OWNER_TYPE": "OWNER"
+    }
+
+    subject_run_config = {
+        "SUBJECT_ID": subject_id,
+        "ALTERNATIVE": 0,
+        "EXL_WE_HOL": 0,
+        "DAY_NUM": data["subject_run_config"]["day_number"],
+        "FREQUENCY": {"Daily": "D", "Weekly": "W", "Monthly Calendar": "MC", "Monthly Business": "MB"}[data["subject_run_config"]["frequency"]]
+    }
+
+    # Create API instances
+    subject_owner_api = akshaypy.APICaller()
+    subject_run_config_api = akshaypy.APICaller()
+
+    # Execute APIs sequentially using ThreadPoolExecutor (1 API at a time)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        executor.submit(call_api, "Subject Owner Details", subject_owner_api, subject_owner_details).result()
+        executor.submit(call_api, "Subject Run Config", subject_run_config_api, subject_run_config).result()
+
+    log_status("All API calls completed ✅")
+    return jsonify({"status": "success", "logs": api_logs})
+
+@app.route('/')
+def index():
+    return render_template('enrollment.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
