@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script>
+        function submitEnrollment() {
+            document.getElementById("status_log").innerHTML = "<p>Starting API calls... ⏳</p>";
+            document.getElementById("progress_bar").value = 0;
+            
+            let formData = {
+                subject_id: "{{ subject_id }}",  // Assuming subject_id is available in template
+                subject_owner_details: {
+                    first_name: document.getElementById("first_name").value.trim(),
+                    last_name: document.getElementById("last_name").value.trim(),
+                    zid: document.getElementById("zid").value.trim(),
+                    owner_email: document.getElementById("owner_email").value.trim()
+                },
+                subject_run_config: {
+                    day_number: document.getElementById("day_number").value.trim(),
+                    frequency: document.querySelector("input[name='frequency']:checked").value
+                }
+            };
+
+            fetch('/submit_enrollment', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("status_log").innerHTML = "";
+                data.logs.forEach(log => {
+                    let p = document.createElement("p");
+                    p.textContent = log;
+                    document.getElementById("status_log").appendChild(p);
+                });
+                document.getElementById("progress_bar").value = 100;
+            })
+            .catch(error => {
+                document.getElementById("status_log").innerHTML += `<p>Error: ${error}</p>`;
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Enrollment</h2>
+        <form>
+            <label>First Name</label>
+            <input type="text" id="first_name" required>
+            
+            <label>Last Name</label>
+            <input type="text" id="last_name" required>
+            
+            <label>ZID</label>
+            <input type="text" id="zid" required>
+            
+            <label>Email</label>
+            <input type="email" id="owner_email" required>
+            
+            <label>Day Number</label>
+            <input type="number" id="day_number" required>
+            
+            <label>Frequency</label>
+            <input type="radio" name="frequency" value="Daily" checked> Daily
+            <input type="radio" name="frequency" value="Weekly"> Weekly
+            <input type="radio" name="frequency" value="Monthly Calendar"> Monthly Calendar
+            <input type="radio" name="frequency" value="Monthly Business"> Monthly Business
+            
+            <button type="button" onclick="submitEnrollment()">Submit</button>
+        </form>
+        
+        <!-- Real-time progress bar and log section -->
+        <progress id="progress_bar" value="0" max="100" style="width: 100%; margin-top: 10px;"></progress>
+        <div id="status_log" style="height: 150px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>
+    </div>
+</body>
+</html>
