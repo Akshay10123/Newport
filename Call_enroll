@@ -1,0 +1,157 @@
+import asyncio
+from flask import Flask, render_template, request, jsonify
+import akshaypy  # Import the custom API package
+
+app = Flask(__name__)
+
+# Store API logs
+api_logs = []
+
+def log_status(message):
+    """Function to log status updates"""
+    api_logs.append(message)
+    print(message)
+
+async def call_api(module_name, api_instance, payload):
+    """Function to call API and handle logging"""
+    log_status(f"Running {module_name} ⏳")
+    try:
+        response = await api_instance.call_endpoint(payload)  # Await the async API call
+        
+        # Extract 'result' key from response if available
+        result_status = response.get("result", "Unknown")
+        
+        if result_status.lower() == "success":
+            log_status(f"{module_name} ✅ Completed - Result: {result_status}")
+        else:
+            log_status(f"{module_name} ❌ Failed - Result: {result_status}")
+        
+        return {"module": module_name, "status": result_status, "response": response}
+    except Exception as e:
+        log_status(f"{module_name} ❌ Failed - {str(e)}")
+        return {"module": module_name, "status": "failed", "error": str(e)}
+
+@app.route('/submit_enrollment', methods=['POST'])
+async def submit_enrollment():
+    """Handles form submission and executes API calls in order"""
+    global api_logs
+    api_logs = []  # Reset logs
+    data = request.json
+
+    # Extract SUBJECT_ID
+    subject_id = data.get("subject_id")
+    
+    # API caller instance
+    subject_enrollment_api = akshaypy.APICaller()
+
+    # Function to process a single module
+    async def process_module(step_number, method_name, subject_arguments, module_name):
+        if not subject_arguments:  # Skip if no data
+            log_status(f"{module_name} skipped - no data provided.")
+            return None
+        payload = {
+            "SUBJECT_ID": subject_id,
+            "STEP_NUMBER": step_number,
+            "METHOD_NAME": method_name,
+            "SUBJECT_ARGUMENTS": subject_arguments
+        }
+        return await call_api(module_name, subject_enrollment_api, payload)
+
+    # Results list
+    results = []
+
+    # Readiness Module
+    if "readiness" in data:
+        for table in data["readiness"].get("tables", []):
+            fqti = table.get("fqti")
+            if fqti:  # Ensure fqti exists
+                results.append(await process_module(10, "TABLE_READY_CHECK", {"fqti": fqti}, "Readiness"))
+
+    # Orchestrator1 Module
+    if "orchestrator1" in data:
+        orchestrator1_data = data["orchestrator1"]
+        if "nucleus" in orchestrator1_data:
+            for nucleus_entry in orchestrator1_data["nucleus"]:
+                results.append(await process_module(20, "ORCHESTRATOR_NUCLEUS", {
+                    "database": nucleus_entry.get("database"),
+                    "role": nucleus_entry.get("role"),
+                    "schema": nucleus_entry.get("schema"),
+                    "sql_statement": nucleus_entry.get("sql_statement"),
+                    "warehouse": "WH_GENERAL_SM"
+                }, "Orchestrator1 - Nucleus"))
+        if "dbt" in orchestrator1_data:
+            for dbt_entry in orchestrator1_data["dbt"]:
+                results.append(await process_module(20, "ORCHESTRATOR_DBT", {
+                    "API_KEY": dbt_entry.get("api_key"),
+                    "ACCOUNT_ID": dbt_entry.get("account_id"),
+                    "JOB_ID": dbt_entry.get("job_id")
+                }, "Orchestrator1 - DBT"))
+        if "posit" in orchestrator1_data:
+            for posit_entry in orchestrator1_data["posit"]:
+                results.append(await process_module(20, "ORCHESTRATOR_POSIT", {
+                    "CONTENT_GUID": posit_entry.get("content_guid")
+                }, "Orchestrator1 - Posit"))
+
+    # Metric Calculator
+    if "metric_calculator" in data:
+        for metric_entry in data["metric_calculator"]:
+            results.append(await process_module(30, "METRIC_CALCULATOR_NUCLEUS", {
+                "database": metric_entry.get("database"),
+                "role": metric_entry.get("role"),
+                "schema": metric_entry.get("schema"),
+                "sql_statement": metric_entry.get("sql_statement"),
+                "warehouse": "WH_GENERAL_SM"
+            }, "Metric Calculator"))
+
+    # Decision Maker
+    if "decision_maker" in data:
+        results.append(await process_module(40, "DECISION_MAKER", {}, "Decision Maker"))
+
+    # Orchestrator2 Module
+    if "orchestrator2" in data:
+        orchestrator2_data = data["orchestrator2"]
+        if "pbi_refresher" in orchestrator2_data:
+            for pbi_entry in orchestrator2_data["pbi_refresher"]:
+                results.append(await process_module(50, "PBI_REFRESH_BY_ROW_ID", {
+                    "dataset_id": pbi_entry.get("dataset_id"),
+                    "group_id": pbi_entry.get("group_id")
+                }, "Orchestrator2 - PBI Refresher"))
+        if "nucleus" in orchestrator2_data:
+            for nucleus_entry in orchestrator2_data["nucleus"]:
+                results.append(await process_module(50, "ORCHESTRATOR_NUCLEUS", {
+                    "database": nucleus_entry.get("database"),
+                    "role": nucleus_entry.get("role"),
+                    "schema": nucleus_entry.get("schema"),
+                    "sql_statement": nucleus_entry.get("sql_statement"),
+                    "warehouse": "WH_GENERAL_SM"
+                }, "Orchestrator2 - Nucleus"))
+        if "dbt" in orchestrator2_data:
+            for dbt_entry in orchestrator2_data["dbt"]:
+                results.append(await process_module(50, "ORCHESTRATOR_DBT", {
+                    "API_KEY": dbt_entry.get("api_key"),
+                    "ACCOUNT_ID": dbt_entry.get("account_id"),
+                    "JOB_ID": dbt_entry.get("job_id")
+                }, "Orchestrator2 - DBT"))
+        if "posit" in orchestrator2_data:
+            for posit_entry in orchestrator2_data["posit"]:
+                results.append(await process_module(50, "ORCHESTRATOR_POSIT", {
+                    "CONTENT_GUID": posit_entry.get("content_guid")
+                }, "Orchestrator2 - Posit"))
+
+    # Communicator
+    if "communicator" in data:
+        recipients = data["communicator"].get("recipients")
+        if recipients:
+            results.append(await process_module(60, "STANDARD_EMAIL_COMMUNICATION", {
+                "recipients": recipients
+            }, "Communicator"))
+
+    log_status("All API calls completed ✅")
+    return jsonify({"status": "success", "logs": api_logs, "results": results})
+
+@app.route('/')
+def index():
+    return render_template('enrollment.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
