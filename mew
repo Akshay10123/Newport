@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Readiness2 Form</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script>
+        function addDynamicForm(containerId, type) {
+            let container = document.getElementById(containerId);
+
+            let formDiv = document.createElement("div");
+            formDiv.className = `${type}-form`;
+
+            if (type === "metadata") {
+                formDiv.innerHTML = `
+                    <h4>Metadata</h4>
+                    <label>Script Execution</label>
+                    <textarea placeholder="Script Execution" class="full-width"></textarea>
+
+                    <label>Database</label>
+                    <input type="text" placeholder="Database" class="full-width">
+
+                    <label>Schema</label>
+                    <input type="text" placeholder="Schema" class="full-width">
+
+                    <label>Role</label>
+                    <input type="text" placeholder="Role" class="full-width">
+
+                    <label><input type="checkbox" checked> Grant Access</label>
+
+                    <button type="button" onclick="this.parentElement.remove()">Remove</button>
+                `;
+            } else if (type === "scheduler") {
+                formDiv.innerHTML = `
+                    <h4>Scheduler</h4>
+                    <label>Type</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="scheduler_type" value="Daily" checked> Daily</label>
+                        <label><input type="radio" name="scheduler_type" value="Weekly"> Weekly</label>
+                        <label><input type="radio" name="scheduler_type" value="Monthly"> Monthly</label>
+                    </div>
+
+                    <label>Time</label>
+                    <input type="time" class="full-width">
+
+                    <button type="button" onclick="this.parentElement.remove()">Remove</button>
+                `;
+            }
+
+            container.appendChild(formDiv);
+        }
+
+        function toggleDropdown(event) {
+            let dropdown = document.getElementById("dropdown");
+            event.stopPropagation();
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+
+        function filterItems() {
+            let input = document.getElementById("search").value.toLowerCase();
+            let items = document.querySelectorAll("#tableList li");
+            items.forEach(item => {
+                item.style.display = item.textContent.toLowerCase().includes(input) ? "block" : "none";
+            });
+        }
+
+        function selectItem(tableName) {
+            let selectedContainer = document.getElementById("selectedItems");
+            let dropdown = document.getElementById("dropdown");
+            let placeholder = document.getElementById("placeholder");
+            if (placeholder) placeholder.remove();
+
+            let selectedItem = document.createElement("div");
+            selectedItem.classList.add("selected-item");
+            selectedItem.innerHTML = `${tableName} <i class='fas fa-times' onclick="removeItem(this, '${tableName}')"></i>`;
+            selectedContainer.appendChild(selectedItem);
+
+            document.querySelector(`#tableList li[onclick="selectItem('${tableName}')"]`).remove();
+            dropdown.style.display = "none";
+        }
+
+        function removeItem(element, tableName) {
+            element.parentElement.remove();
+            let list = document.getElementById("tableList");
+            let newItem = document.createElement("li");
+            newItem.textContent = tableName;
+            newItem.setAttribute("onclick", `selectItem('${tableName}')`);
+            list.appendChild(newItem);
+
+            if (!document.getElementById("selectedItems").children.length) {
+                document.getElementById("selectedItems").innerHTML = '<span id="placeholder">Select tables...</span>';
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Readiness2 Form</h2>
+
+        <!-- Nucleus Section -->
+        <div class="module">
+            <h3>Nucleus - Select Snowflake Tables</h3>
+            <label>Select Snowflake Tables</label>
+            <div class="dropdown-container" onclick="toggleDropdown(event)">
+                <div class="selected-items" id="selectedItems">
+                    <span id="placeholder">Select tables...</span>
+                </div>
+                <div class="dropdown-content" id="dropdown">
+                    <input type="text" id="search" placeholder="Search tables..." onkeyup="filterItems()">
+                    <ul id="tableList">
+                        {% for table in available_tables %}
+                            <li onclick="selectItem('{{ table }}')">{{ table }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Forms Section -->
+        <div id="dynamic_forms"></div>
+
+        <div class="buttons">
+            <button type="button" onclick="addDynamicForm('dynamic_forms', 'metadata')">Add Metadata</button>
+            <button type="button" onclick="addDynamicForm('dynamic_forms', 'scheduler')">Add Scheduler</button>
+        </div>
+
+        <button type="submit">Submit</button>
+    </div>
+</body>
+</html>
