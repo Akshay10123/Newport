@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
+</head>
+<body>
+    <div class="container">
+        <h2>Enrollment for {{ operation_flow.replace("_", " ").title() }}</h2>
+
+        <form id="enrollmentForm">
+            <!-- ✅ Subject Owner Details -->
+            {% if "subject_owner_details" in modules %}
+            <div class="module">
+                <h3>Subject Owner Details</h3>
+                <label>First Name <span class="required">*</span></label>
+                <input type="text" id="first_name" class="full-width" required>
+
+                <label>Last Name <span class="required">*</span></label>
+                <input type="text" id="last_name" class="full-width" required>
+
+                <label>ZID <span class="required">*</span></label>
+                <input type="text" id="zid" class="full-width" maxlength="6" required oninput="validateZID()" onkeyup="this.value = this.value.toUpperCase();">
+                <p id="zid-error" class="error-text"></p>
+
+                <label>Owner Email <span class="required">*</span></label>
+                <input type="email" id="owner_email" class="full-width" required oninput="validateEmail()">
+                <p id="email-error" class="error-text"></p>
+            </div>
+            {% endif %}
+
+            {% if "subject_run_config" in modules %}
+            <div class="module">
+                <h3>Subject Run Config</h3>
+            
+                <!-- Frequency Selection -->
+                <label>Frequency <span class="required">*</span></label>
+                <div class="radio-group">
+                    <label><input type="radio" name="frequency" value="Daily" onclick="toggleRunConfigInputs()"> Daily</label>
+                    <label><input type="radio" name="frequency" value="Weekly" onclick="toggleRunConfigInputs()"> Weekly</label>
+                    <label><input type="radio" name="frequency" value="Monthly_Calendar" onclick="toggleRunConfigInputs()"> Monthly Calendar Days</label>
+                    <label><input type="radio" name="frequency" value="Monthly_Business" onclick="toggleRunConfigInputs()"> Monthly Business Days</label>
+                </div>
+            
+                <!-- Conditional Input for Weekly Frequency -->
+                <div id="weekly_day_number_container" style="display: none;">
+                    <label>Weekly Day Number (1-7) <span class="required">*</span></label>
+                    <input type="number" id="weekly_day_number" class="full-width" min="1" max="7">
+                </div>
+            
+                <!-- Conditional Input for Monthly Frequencies -->
+                <div id="monthly_day_number_container" style="display: none;">
+                    <label>Day Number (1-31) <span class="required">*</span></label>
+                    <input type="number" id="monthly_day_number" class="full-width" min="1" max="31">
+                </div>
+            </div>
+            {% endif %}
+           
+
+
+            <!-- ✅ Readiness Module -->
+            {% if "readiness" in modules %}
+            <div class="module">
+                <h3>Readiness</h3>
+
+                <!-- Tab Navigation -->
+                <ul class="nav-tabs">
+                    <li><a class="tab-link active" onclick="showTab(event, 'snowflake')">Snowflake</a></li>
+                    <li><a class="tab-link" onclick="showTab(event, 'metadata')">Metadata</a></li>
+                    <li><a class="tab-link" onclick="showTab(event, 'scheduler')">Scheduler</a></li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <!-- ✅ Snowflake Tab (Multi-Select Dropdown) -->
+                    <div id="snowflake" class="tab-pane active">
+                        <label>Select Snowflake Tables</label>
+                        <div class="dropdown-container" onclick="toggleDropdown(event)">
+                            <div class="selected-items" id="selectedItems">
+                                <span id="placeholder">Select tables...</span>
+                            </div>
+                            <div class="dropdown-content" id="dropdown">
+                                <input type="text" id="search" placeholder="Search tables..." onkeyup="filterItems()">
+                                <ul id="tableList">
+                                    {% for table in available_tables %}
+                                        <li onclick="selectItem('{{ table }}')">{{ table }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>                    
+
+
+                    <!-- ✅ Metadata Tab -->
+                    <div id="metadata" class="tab-pane">
+                        <div id="readiness_metadata_forms"></div>
+                        <button type="button" onclick="addMetadataForm('readiness_metadata_forms')">Add Metadata</button>
+                    </div>
+
+                    <!-- ✅ Scheduler Tab -->
+                    <div id="scheduler" class="tab-pane">
+                        <label>Type</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="scheduler_type" value="Daily" checked> Daily</label>
+                            <label><input type="radio" name="scheduler_type" value="Weekly"> Weekly</label>
+                            <label><input type="radio" name="scheduler_type" value="Monthly"> Monthly</label>
+                        </div>
+                        <label>Time</label>
+                        <input type="time" id="schedule_time" class="full-width">
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+
+            {% if "orchestrator1" in modules %}
+            <div class="module">
+                <h3>Orchestrator1</h3>
+            
+                <!-- ✅ Tab Navigation -->
+                <ul class="nav-tabs">
+                    <li><a class="tab-link active" onclick="showTab(event, 'nucleus1')">Nucleus</a></li>
+                    <li><a class="tab-link" onclick="showTab(event, 'dbt1')">dbt</a></li>
+                    <li><a class="tab-link" onclick="showTab(event, 'posit1')">Posit</a></li>
+                </ul>
+            
+                <!-- ✅ Tab Content -->
+                <div class="tab-content">
+                    <!-- ✅ Nucleus Tab -->
+                    <div id="nucleus1" class="tab-pane active">
+                        <div id="nucleus1_forms"></div>
+                        <button type="button" onclick="addOrchestratorForm('nucleus1_forms')">Add Nucleus</button>
+                    </div>
+            
+                    <!-- ✅ dbt Tab -->
+                    <div id="dbt1" class="tab-pane">
+                        <div id="dbt1_forms"></div>
+                        <button type="button" onclick="addOrchestratorForm('dbt1_forms')">Add dbt</button>
+                    </div>
+            
+                    <!-- ✅ Posit Tab -->
+                    <div id="posit1" class="tab-pane">
+                        <div id="posit1_forms"></div>
+                        <button type="button" onclick="addOrchestratorForm('posit1_forms')">Add Posit</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+
+            {% if "metric_calculator" in modules %}
+            <div class="module">
+                <h3>Metric Calculator</h3>
+                <div id="metric_calculator_forms"></div>
+                <button type="button" onclick="addMetadataForm('metric_calculator_forms')">Add Metric Calculator</button>
+            </div>
+            {% endif %}
+
+            {% if "decision_maker" in modules %}
+            <div class="module">
+                <h3>Decision Maker</h3>    
+                <p>Decision maker condition of Pass/Fail will be considered before going to next step in this operation flow</p>        
+            </div>
+            {% endif %}
+
+            {% if "orchestrator2" in modules %}
+            <div class="module">
+                <h3>Orchestrator2</h3>
+            
+                <!-- ✅ Tab Navigation -->
+                <ul class="nav-tabs">
+                    <li><a class="tab-link active" onclick="showTab(event, 'pbi_refresher')">PBI Refresher</a></li>
+                    <li><a class="tab-link" onclick="showTab(event, 'nucleus2')">Nucleus</a></li>
+                    <li><a class="tab-link" onclick="showTab(event, 'dbt2')">dbt</a></li>
+                    <li><a class="tab-link" onclick="showTab(event, 'posit2')">Posit</a></li>
+                </ul>
+            
+                <!-- ✅ Tab Content -->
+                <div class="tab-content">
+                    <!-- ✅ PBI Refresher Tab -->
+                    <div id="pbi_refresher" class="tab-pane active">
+                        <div id="pbi_refresher_forms"></div>
+                        <button type="button" onclick="addPbiRefresherForm()">Add PBI Refresher</button>
+                    </div>
+            
+                    <!-- ✅ Nucleus Tab (Same as Orchestrator1) -->
+                    <div id="nucleus2" class="tab-pane">
+                        <div id="nucleus2_forms"></div>
+                        <button type="button" onclick="addOrchestratorForm('nucleus2_forms')">Add Nucleus</button>
+                    </div>
+            
+                    <!-- ✅ dbt Tab (Same as Orchestrator1) -->
+                    <div id="dbt2" class="tab-pane">
+                        <div id="dbt2_forms"></div>
+                        <button type="button" onclick="addOrchestratorForm('dbt2_forms')">Add dbt</button>
+                    </div>
+            
+                    <!-- ✅ Posit Tab (Same as Orchestrator1) -->
+                    <div id="posit2" class="tab-pane">
+                        <div id="posit2_forms"></div>
+                        <button type="button" onclick="addOrchestratorForm('posit2_forms')">Add Posit</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if "communicator" in modules %}
+            <div class="module">
+                <h3>Communicator</h3>
+            
+                <label>Recipients</label>
+                <textarea id="recipients_input" class="full-width" placeholder="Enter recipient emails, separated by commas..."></textarea>
+                <small>For multiple recipients, separate them with commas.</small>
+            
+            </div>
+            {% endif %}            
+            
+
+            <button type="button" onclick="submitEnrollment()">Submit</button>
+            <!-- Existing form and UI structure -->
+            <div id="status_logs" style="height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>
+            <progress id="progress_bar" value="0" max="100" style="width: 100%; margin-top: 10px;"></progress>
+        </form>
+    </div>
+
+    <script>
+
+        document.addEventListener("click", function(event) {
+            let dropdown = document.getElementById("dropdown");
+            let dropdownContainer = document.querySelector(".dropdown-container");
+
+            // Only close if clicking outside both the dropdown and its container
+            if (!dropdownContainer.contains(event.target)) {
+                dropdown.style.display = "none";
+            }
+        });
+
+        // Prevent dropdown from closing when clicking inside the search box
+        document.getElementById("search").addEventListener("click", function(event) {
+            event.stopPropagation(); // Prevents the event from bubbling up and triggering the outside click
+        });
+
+
+        function toggleDropdown(event) {
+            let dropdown = document.getElementById("dropdown");
+
+            // Prevent immediate closing when clicking inside
+            event.stopPropagation();
+
+            // Toggle visibility
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
+
+
+        function filterItems() {
+            let input = document.getElementById("search").value.toLowerCase();
+            let items = document.querySelectorAll("#tableList li");
+            items.forEach(item => {
+                item.style.display = item.textContent.toLowerCase().includes(input) ? "block" : "none";
+            });
+        }
+
+        function selectItem(tableName) {
+            let selectedContainer = document.getElementById("selectedItems");
+            let dropdown = document.getElementById("dropdown");
+            let placeholder = document.getElementById("placeholder");
+            if (placeholder) placeholder.remove();
+
+            let selectedItem = document.createElement("div");
+            selectedItem.classList.add("selected-item");
+            selectedItem.innerHTML = `${tableName} <i class='fas fa-times' onclick="removeItem(this, '${tableName}')"></i>`;
+            selectedContainer.appendChild(selectedItem);
+
+            document.querySelector(`#tableList li[onclick="selectItem('${tableName}')"]`).remove();
+            dropdown.style.display = "none";
+        }
+
+        function removeItem(element, tableName) {
+            element.parentElement.remove();
+            let list = document.getElementById("tableList");
+            let newItem = document.createElement("li");
+            newItem.textContent = tableName;
+            newItem.setAttribute("onclick", `selectItem('${tableName}')`);
+            list.appendChild(newItem);
+
+            if (!document.getElementById("selectedItems").children.length) {
+                document.getElementById("selectedItems").innerHTML = '<span id="placeholder">Select tables...</span>';
+            }
+        }
+
+
+
+
+        function validateZID() {
+            let zid = document.getElementById("zid").value.trim();
+            let zidError = document.getElementById("zid-error");
+
+            if (zid.length < 6) {
+                zidError.textContent = "ZID must be exactly 6 characters.";
+            } else {
+                zidError.textContent = ""; // Clear error if valid
+            }
+        }
+
+        function validateEmail() {
+            let email = document.getElementById("owner_email").value.trim();
+            let emailError = document.getElementById("email-error");
+
+            // Regular expression for the required format: alphanumeric.alphanumeric@xyz.com
+            let emailRegex = /^[a-zA-Z0-9]+\.[a-zA-Z0-9]+@xyz\.com$/;
+
+            if (!emailRegex.test(email)) {
+                emailError.textContent = "Email must be in format: FirstName.LastName@xyz.com";
+            } else {
+                emailError.textContent = ""; // Clear error if valid
+            }
+        }
+
+        function toggleRunConfigInputs() {
+            let selectedFrequency = document.querySelector("input[name='frequency']:checked").value;
+
+            let weeklyContainer = document.getElementById("weekly_day_number_container");
+            let monthlyContainer = document.getElementById("monthly_day_number_container");
+
+            if (selectedFrequency === "Weekly") {
+                weeklyContainer.style.display = "block";
+                monthlyContainer.style.display = "none";
+            } else if (selectedFrequency === "Monthly_Calendar" || selectedFrequency === "Monthly_Business") {
+                weeklyContainer.style.display = "none";
+                monthlyContainer.style.display = "block";
+            } else {
+                weeklyContainer.style.display = "none";
+                monthlyContainer.style.display = "none";
+            }
+        }
+
+
+        function showTab(event, tabId) {
+            // Remove 'active' class from all tab links and content
+            document.querySelectorAll('.tab-pane').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));
+
+            // Activate the clicked tab and corresponding content
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function updateSelectedTables() {
+            let dropdown = document.getElementById("table_names");
+            let selectedList = document.getElementById("selected_tables_list");
+            selectedList.innerHTML = ""; // Clear previous list
+
+            // Loop through selected options and create list items
+            Array.from(dropdown.selectedOptions).forEach(option => {
+                let listItem = document.createElement("li");
+                listItem.innerHTML = `${option.value} 
+                    <button onclick="removeSelectedTable('${option.value}')">Remove</button>`;
+                selectedList.appendChild(listItem);
+            });
+        }
+
+        function removeSelectedTable(tableName) {
+            let dropdown = document.getElementById("table_names");
+
+            // Deselect the removed table
+            Array.from(dropdown.options).forEach(option => {
+                if (option.value === tableName) {
+                    option.selected = false;
+                }
+            });
+
+            // Refresh the selected tables list
+            updateSelectedTables();
+        }
+
+
+        // function addTable() {
+        //     let dropdown = document.getElementById("table_names");
+        //     let selectedTable = dropdown.value;
+        //     let selectedList = document.getElementById("selected_tables_list");
+
+        //     if (selectedTable) {
+        //         let listItem = document.createElement("li");
+        //         listItem.innerHTML = `${selectedTable} <button onclick="removeTable(this, '${selectedTable}')">Remove</button>`;
+        //         selectedList.appendChild(listItem);
+
+        //         dropdown.querySelector(`option[value='${selectedTable}']`).disabled = true;
+        //         dropdown.value = "";
+        //     }
+        // }
+
+        function removeTable(button, tableName) {
+            let dropdown = document.getElementById("table_names");
+            dropdown.querySelector(`option[value='${tableName}']`).disabled = false;
+            button.parentElement.remove();
+        }
+
+        function addMetadataForm(containerId) {
+            let container = document.getElementById(containerId);
+
+            let formDiv = document.createElement("div");
+            formDiv.className = "metadata-form";
+            formDiv.innerHTML = `
+                <label>Script Execution</label>
+                <textarea placeholder="Script Execution" class="full-width"></textarea>
+
+                <label>Role</label>
+                <input type="text" placeholder="Role" class="full-width">
+                
+                <label>Database</label>
+                <input type="text" placeholder="Database" class="full-width">
+                
+                <label>Schema</label>
+                <input type="text" placeholder="Schema" class="full-width">
+                
+                <label><input type="checkbox" checked> Grant Access</label>
+                
+                <button type="button" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            container.appendChild(formDiv);
+        }
+
+        function addOrchestratorForm(containerId) {
+            let container = document.getElementById(containerId);
+            let formDiv = document.createElement("div");
+            formDiv.className = "orchestrator-form";
+
+            if (containerId.includes("nucleus")) {
+                formDiv.innerHTML = `
+                    <label>Procedure/View Name</label>
+                    <input type="text" placeholder="Enter Procedure/View Name" class="full-width">
+
+                    <label>Database</label>
+                    <input type="text" placeholder="Enter Database" class="full-width">
+
+                    <label>Schema</label>
+                    <input type="text" placeholder="Enter Schema" class="full-width">
+
+                    <label>Role</label>
+                    <input type="text" placeholder="Enter Role" class="full-width">
+
+                    <label><input type="checkbox" checked> Grant Access to SVC</label>
+
+                    <button type="button" onclick="this.parentElement.remove()">Remove</button>
+                `;
+            } else if (containerId.includes("dbt")) {
+                formDiv.innerHTML = `
+                    <label>API Key</label>
+                    <input type="text" placeholder="Enter API Key" class="full-width">
+
+                    <label>Account ID</label>
+                    <input type="text" placeholder="Enter Account ID" class="full-width">
+
+                    <label>Job ID</label>
+                    <input type="text" placeholder="Enter Job ID" class="full-width">
+
+                    <button type="button" onclick="this.parentElement.remove()">Remove</button>
+                `;
+            } else if (containerId.includes("posit")) {
+                formDiv.innerHTML = `
+                    <label>Grant Access</label>
+                    <input type="checkbox" class="grant-access-checkbox" checked>
+
+                    <label>Content URL</label>
+                    <input type="text" placeholder="Enter Content URL" class="full-width posit-url">
+
+                    <button type="button" onclick="this.parentElement.remove()">Remove</button>
+                `;
+            }
+
+            container.appendChild(formDiv);
+        }
+        
+
+        function addPbiRefresherForm() {
+            let container = document.getElementById("pbi_refresher_forms");
+
+            let formDiv = document.createElement("div");
+            formDiv.className = "pbi-refresher-form";
+            formDiv.innerHTML = `
+                <label>Group ID</label>
+                <input type="text" placeholder="Enter Group ID" class="full-width">
+
+                <label>Dataset ID</label>
+                <input type="text" placeholder="Enter Dataset ID" class="full-width">
+
+                <button type="button" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            container.appendChild(formDiv);
+        }
+
+
+
+
+        function submitEnrollment() {
+            let zid = document.getElementById("zid").value.trim();
+            let emailError = document.getElementById("email-error").textContent;
+            let zidError = document.getElementById("zid-error").textContent;
+
+            if (zid.length !== 6 || emailError || zidError) {
+                alert("Please fix errors before submitting.");
+                return;
+            }
+            
+            let selectedItemsContainer = document.getElementById("selectedItems");
+            let selectedItems = selectedItemsContainer.getElementsByClassName("selected-item");
+            
+            // Extract the selected table names
+            let selectedTables = [];
+            for (let item of selectedItems) {
+                selectedTables.push(item.textContent.replace("✖", "").trim()); // Remove the "X" symbol
+            }
+
+            let formData = {
+                subject_owner_details: {
+                    first_name: document.getElementById("first_name").value.trim(),
+                    last_name: document.getElementById("last_name").value.trim(),
+                    zid: zid,
+                    owner_email: document.getElementById("owner_email").value.trim()
+                },
+                subject_run_config: {
+                    frequency: document.querySelector("input[name='frequency']:checked").value,
+                    weekly_day_number: document.getElementById("weekly_day_number")?.value || null,
+                    monthly_day_number: document.getElementById("monthly_day_number")?.value || null
+                },
+                readiness: {
+                    // snowflake: Array.from(document.getElementById("table_names").selectedOptions).map(option => option.value),
+                    snowflake: selectedTables,
+                    metadata:  Array.from(document.querySelectorAll("#readiness_metadata_forms .metadata-form")).map(form => ({
+                        script_execution: form.querySelector("textarea").value.trim(),
+                        role: form.querySelector("input:nth-of-type(1)").value.trim(),
+                        db: form.querySelector("input:nth-of-type(2)").value.trim(),
+                        schema: form.querySelector("input:nth-of-type(3)").value.trim(),
+                        grant_access: form.querySelector("input[type='checkbox']").checked
+                    })),
+                    scheduler: {
+                        type: document.querySelector("input[name='scheduler_type']:checked").value,
+                        time: document.getElementById("schedule_time").value
+                    }
+                },
+                orchestrator1: {
+                    nucleus: Array.from(document.querySelectorAll("#nucleus1_forms .orchestrator-form")).map(form => ({
+                        procedure_view: form.querySelector("input:nth-of-type(1)").value.trim(),
+                        db: form.querySelector("input:nth-of-type(2)").value.trim(),
+                        schema: form.querySelector("input:nth-of-type(3)").value.trim(),
+                        role: form.querySelector("input:nth-of-type(4)").value.trim(),
+                        grant_access_svc: form.querySelector("input[type='checkbox']").checked
+                    })),
+                    dbt: Array.from(document.querySelectorAll("#dbt1_forms .orchestrator-form")).map(form => ({
+                        api_key: form.querySelector("input:nth-of-type(1)").value.trim(),
+                        account_id: form.querySelector("input:nth-of-type(2)").value.trim(),
+                        job_id: form.querySelector("input:nth-of-type(3)").value.trim()
+                    })),
+                    posit: Array.from(document.querySelectorAll("#posit1_forms .orchestrator-form")).map(form => ({
+                        grant_access: form.querySelector(".grant-access-checkbox").checked,
+                        content_url: form.querySelector(".posit-url").value.trim()
+                    }))
+                },
+                metric_calculator: Array.from(document.querySelectorAll("#metric_calculator_forms .metadata-form")).map(form => ({
+                    script_execution: form.querySelector("textarea").value.trim(),
+                    role: form.querySelector("input:nth-of-type(1)").value.trim(),
+                    db: form.querySelector("input:nth-of-type(2)").value.trim(),
+                    schema: form.querySelector("input:nth-of-type(3)").value.trim(),
+                    grant_access: form.querySelector("input[type='checkbox']").checked
+                })),
+
+                orchestrator2: {
+                    pbi_refresher: Array.from(document.querySelectorAll(".pbi-refresher-form")).map(form => ({
+                        group_id: form.querySelector("input:nth-of-type(1)").value.trim(),
+                        dataset_id: form.querySelector("input:nth-of-type(2)").value.trim()
+                    })),
+                    nucleus: Array.from(document.querySelectorAll("#nucleus2_forms .orchestrator-form")).map(form => ({
+                        procedure_view: form.querySelector("input:nth-of-type(1)").value.trim(),
+                        db: form.querySelector("input:nth-of-type(2)").value.trim(),
+                        schema: form.querySelector("input:nth-of-type(3)").value.trim(),
+                        role: form.querySelector("input:nth-of-type(4)").value.trim(),
+                        grant_access_svc: form.querySelector("input[type='checkbox']").checked
+                    })),
+                    dbt: Array.from(document.querySelectorAll("#dbt2_forms .orchestrator-form")).map(form => ({
+                        api_key: form.querySelector("input:nth-of-type(1)").value.trim(),
+                        account_id: form.querySelector("input:nth-of-type(2)").value.trim(),
+                        job_id: form.querySelector("input:nth-of-type(3)").value.trim()
+                    })),
+                    posit: Array.from(document.querySelectorAll("#posit2_forms .orchestrator-form")).map(form => ({
+                        grant_access: form.querySelector(".grant-access-checkbox").checked,
+                        content_url: form.querySelector(".posit-url").value.trim()
+                    }))
+                    
+                },
+                communicator: {
+                    recipients: document.getElementById("recipients_input").value.trim()
+                }
+
+            };
+
+            console.log("Submitting Enrollment Data:", formData);
+
+            fetch('/submit_enrollment', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            }).then(response => response.json())
+            .then(result => alert("Enrollment submitted successfully!"))
+            .catch(error => alert("Error submitting enrollment"));
+        }
+
+
+        document.addEventListener("click", function(event) {
+            let dropdown = document.getElementById("dropdown");
+            let dropdownContainer = document.querySelector(".dropdown-container");
+
+            // Close dropdown if click happens outside
+            if (!dropdownContainer.contains(event.target)) {
+                dropdown.style.display = "none";
+            }
+        });
+
+        const apiUrls = {
+            subject_owner_details: "https://example.com/subject_owner_api",
+            subject_run_config: "https://example.com/subject_run_config_api",
+            other_modules: "https://example.com/other_modules_api"
+        };
+
+        async function submitEnrollment() {
+            const formData = gatherFormData(); // Assumes gatherFormData exists and collects the payload
+
+            // Clear logs and reset progress bar
+            document.getElementById("status_logs").innerHTML = "";
+            const progressBar = document.getElementById("progress_bar");
+            progressBar.value = 0;
+            progressBar.max = Object.keys(formData).length;
+
+            // Helper to update status logs and progress
+            function updateProgress(moduleName, status) {
+                const logContainer = document.getElementById("status_logs");
+                const logEntry = document.createElement("p");
+                logEntry.textContent = `${moduleName}: ${status}`;
+                logContainer.appendChild(logEntry);
+
+                // Update progress bar
+                progressBar.value += 1;
+            }
+
+            const apiCalls = [];
+
+            // Subject Owner Details
+            if (formData.subject_owner_details) {
+                apiCalls.push(callApi(
+                    "Subject Owner Details",
+                    apiUrls.subject_owner_details,
+                    formData.subject_owner_details,
+                    updateProgress
+                ));
+            }
+
+            // Subject Run Config
+            if (formData.subject_run_config) {
+                apiCalls.push(callApi(
+                    "Subject Run Config",
+                    apiUrls.subject_run_config,
+                    formData.subject_run_config,
+                    updateProgress
+                ));
+            }
+
+            // Orchestrator1 (Multiple Entries for Nucleus, DBT, Posit)
+            if (formData.orchestrator1) {
+                if (formData.orchestrator1.nucleus) {
+                    formData.orchestrator1.nucleus.forEach((entry, index) => {
+                        apiCalls.push(callApi(
+                            `Orchestrator1 - Nucleus ${index + 1}`,
+                            apiUrls.other_modules,
+                            {
+                                SUBJECT_ID: formData.subject_id,
+                                STEP_NUMBER: 20,
+                                METHOD_NAME: "ORCHESTRATOR_NUCLEUS",
+                                SUBJECT_ARGUMENTS: entry
+                            },
+                            updateProgress
+                        ));
+                    });
+                }
+                if (formData.orchestrator1.dbt) {
+                    formData.orchestrator1.dbt.forEach((entry, index) => {
+                        apiCalls.push(callApi(
+                            `Orchestrator1 - DBT ${index + 1}`,
+                            apiUrls.other_modules,
+                            {
+                                SUBJECT_ID: formData.subject_id,
+                                STEP_NUMBER: 20,
+                                METHOD_NAME: "ORCHESTRATOR_DBT",
+                                SUBJECT_ARGUMENTS: entry
+                            },
+                            updateProgress
+                        ));
+                    });
+                }
+                if (formData.orchestrator1.posit) {
+                    formData.orchestrator1.posit.forEach((entry, index) => {
+                        apiCalls.push(callApi(
+                            `Orchestrator1 - Posit ${index + 1}`,
+                            apiUrls.other_modules,
+                            {
+                                SUBJECT_ID: formData.subject_id,
+                                STEP_NUMBER: 20,
+                                METHOD_NAME: "ORCHESTRATOR_POSIT",
+                                SUBJECT_ARGUMENTS: entry
+                            },
+                            updateProgress
+                        ));
+                    });
+                }
+            }
+
+            // Metric Calculator (Multiple Entries)
+            if (formData.metric_calculator) {
+                formData.metric_calculator.forEach((entry, index) => {
+                    apiCalls.push(callApi(
+                        `Metric Calculator ${index + 1}`,
+                        apiUrls.other_modules,
+                        {
+                            SUBJECT_ID: formData.subject_id,
+                            STEP_NUMBER: 30,
+                            METHOD_NAME: "METRIC_CALCULATOR_NUCLEUS",
+                            SUBJECT_ARGUMENTS: entry
+                        },
+                        updateProgress
+                    ));
+                });
+            }
+
+            // Decision Maker
+            if (formData.decision_maker) {
+                apiCalls.push(callApi(
+                    "Decision Maker",
+                    apiUrls.other_modules,
+                    {
+                        SUBJECT_ID: formData.subject_id,
+                        STEP_NUMBER: 40,
+                        METHOD_NAME: "DECISION_MAKER",
+                        SUBJECT_ARGUMENTS: {}
+                    },
+                    updateProgress
+                ));
+            }
+
+            // Orchestrator2 (Multiple Entries for Nucleus, DBT, Posit, PBI Refresh)
+            if (formData.orchestrator2) {
+                if (formData.orchestrator2.nucleus) {
+                    formData.orchestrator2.nucleus.forEach((entry, index) => {
+                        apiCalls.push(callApi(
+                            `Orchestrator2 - Nucleus ${index + 1}`,
+                            apiUrls.other_modules,
+                            {
+                                SUBJECT_ID: formData.subject_id,
+                                STEP_NUMBER: 50,
+                                METHOD_NAME: "ORCHESTRATOR_NUCLEUS",
+                                SUBJECT_ARGUMENTS: entry
+                            },
+                            updateProgress
+                        ));
+                    });
+                }
+                if (formData.orchestrator2.dbt) {
+                    formData.orchestrator2.dbt.forEach((entry, index) => {
+                        apiCalls.push(callApi(
+                            `Orchestrator2 - DBT ${index + 1}`,
+                            apiUrls.other_modules,
+                            {
+                                SUBJECT_ID: formData.subject_id,
+                                STEP_NUMBER: 50,
+                                METHOD_NAME: "ORCHESTRATOR_DBT",
+                                SUBJECT_ARGUMENTS: entry
+                            },
+                            updateProgress
+                        ));
+                    });
+                }
+                if (formData.orchestrator2.posit) {
+                    formData.orchestrator2.posit.forEach((entry, index) => {
+                        apiCalls.push(callApi(
+                            `Orchestrator2 - Posit ${index + 1}`,
+                            apiUrls.other_modules,
+                            {
+                                SUBJECT_ID: formData.subject_id,
+                                STEP_NUMBER: 50,
+                                METHOD_NAME: "ORCHESTRATOR_POSIT",
+                                SUBJECT_ARGUMENTS: entry
+                            },
+                            updateProgress
+                        ));
+                    });
+                }
+                if (formData.orchestrator2.pbi_refresher) {
+                    formData.orchestrator2.pbi_refresher.forEach((entry, index) => {
+                        apiCalls.push(callApi(
+                            `Orchestrator2 - PBI Refresher ${index + 1}`,
+                            apiUrls.other_modules,
+                            {
+                                SUBJECT_ID: formData.subject_id,
+                                STEP_NUMBER: 50,
+                                METHOD_NAME: "PBI_REFRESH_BY_ROW_ID",
+                                SUBJECT_ARGUMENTS: entry
+                            },
+                            updateProgress
+                        ));
+                    });
+                }
+            }
+
+            // Communicator
+            if (formData.communicator) {
+                apiCalls.push(callApi(
+                    "Communicator",
+                    apiUrls.other_modules,
+                    {
+                        SUBJECT_ID: formData.subject_id,
+                        STEP_NUMBER: 60,
+                        METHOD_NAME: "STANDARD_EMAIL_COMMUNICATION",
+                        SUBJECT_ARGUMENTS: { recipients: formData.communicator.recipients }
+                    },
+                    updateProgress
+                ));
+            }
+
+            // Execute all API calls in parallel
+            try {
+                await Promise.all(apiCalls);
+                updateProgress("All Modules", "✅ All API calls completed successfully!");
+            } catch (error) {
+                updateProgress("Overall Process", `❌ Error occurred: ${error.message}`);
+            }
+        }
+
+        async function callApi(moduleName, endpoint, payload, updateProgress) {
+            try {
+                updateProgress(moduleName, "⏳ Running");
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (data.result && data.result.toLowerCase() === "success") {
+                    updateProgress(moduleName, "✅ Completed");
+                } else {
+                    updateProgress(moduleName, `❌ Failed - ${data.result || "Unknown Error"}`);
+                }
+            } catch (error) {
+                updateProgress(moduleName, `❌ Failed - ${error.message}`);
+            }
+        }
+
+
+    </script>
+
+
+    <style>
+        .dropdown-container {
+            width: 100%;
+            position: relative;
+        }
+        .selected-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: white;
+            cursor: pointer;
+        }
+        .selected-item {
+            display: flex;
+            align-items: center;
+            background: #ff4d4d;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+        }
+        .selected-item i {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            width: 100%;
+            background: white;
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .dropdown-content input {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            outline: none;
+            box-shadow: none;
+        }
+        .dropdown-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .dropdown-content li {
+            padding: 8px;
+            cursor: pointer;
+        }
+        .dropdown-content li:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</body>
+</html>
