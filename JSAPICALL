@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        const apiUrls = {
+            subject_owner_details: "https://example.com/subject_owner_api",
+            subject_run_config: "https://example.com/subject_run_config_api"
+        };
+
+        async function submitEnrollment() {
+            let zid = document.getElementById("zid").value.trim();
+            let emailError = document.getElementById("email-error").textContent;
+            let zidError = document.getElementById("zid-error").textContent;
+
+            if (zid.length !== 6 || emailError || zidError) {
+                alert("Please fix errors before submitting.");
+                return;
+            }
+
+            let formData = {
+                subject_owner_details: {
+                    first_name: document.getElementById("first_name").value.trim(),
+                    last_name: document.getElementById("last_name").value.trim(),
+                    zid: zid,
+                    owner_email: document.getElementById("owner_email").value.trim()
+                },
+                subject_run_config: {
+					SUBJECT_ID: zid, // Use the `zid` as SUBJECT_ID
+					ALTERNATIVE: 0, // Default value
+					EXL_WE_HOL: 0, // Default value
+					DAY_NUM: getDayNumber(), // Based on frequency
+					FREQUENCY: getFrequency() // Map frequency to its short code
+				}
+            };
+			
+			// Helper Functions for DAY_NUM and FREQUENCY
+			function getDayNumber() {
+				const frequency = document.querySelector("input[name='frequency']:checked").value;
+				if (frequency === "Weekly") {
+					return document.getElementById("weekly_day_number").value.trim() || 0;
+				} else if (frequency === "Monthly") {
+					return document.getElementById("monthly_day_number").value.trim() || 0;
+				}
+				return 0; // Default for Daily
+			}
+
+			function getFrequency() {
+				const frequency = document.querySelector("input[name='frequency']:checked").value;
+				return {
+					"Daily": "D",
+					"Weekly": "W",
+					"Monthly": "MC"
+				}[frequency];
+			}
+
+            // Clear logs and reset progress bar
+            document.getElementById("status_logs").innerHTML = "";
+            const progressBar = document.getElementById("progress_bar");
+            progressBar.value = 0;
+            progressBar.max = Object.keys(formData).length;
+
+            // Helper to update status logs and progress
+            function updateProgress(moduleName, status) {
+                const logContainer = document.getElementById("status_logs");
+                const logEntry = document.createElement("p");
+                logEntry.textContent = `${moduleName}: ${status}`;
+                logContainer.appendChild(logEntry);
+
+                // Update progress bar
+                progressBar.value += 1;
+            }
+
+            const apiCalls = [];
+
+            // Subject Owner Details
+            if (formData.subject_owner_details) {
+                apiCalls.push(callApi(
+                    "Subject Owner Details",
+                    apiUrls.subject_owner_details,
+                    formData.subject_owner_details,
+                    updateProgress
+                ));
+            }
+
+            // Subject Run Config
+            if (formData.subject_run_config) {
+                apiCalls.push(callApi(
+                    "Subject Run Config",
+                    apiUrls.subject_run_config,
+                    formData.subject_run_config,
+                    updateProgress
+                ));
+            }
+
+            try {
+                await Promise.all(apiCalls);
+                updateProgress("All Modules", "✅ All API calls completed successfully!");
+            } catch (error) {
+                updateProgress("Overall Process", `❌ Error occurred: ${error.message}`);
+            }
+        }
+
+        async function callApi(moduleName, endpoint, payload, updateProgress) {
+            try {
+                updateProgress(moduleName, "⏳ Running");
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (data.result && data.result.toLowerCase() === "success") {
+                    updateProgress(moduleName, "✅ Completed");
+                } else {
+                    updateProgress(moduleName, `❌ Failed - ${data.result || "Unknown Error"}`);
+                }
+            } catch (error) {
+                updateProgress(moduleName, `❌ Failed - ${error.message}`);
+            }
+        }
+    </script>
+</head>
+<body>
+    <form>
+        <!-- Subject Owner Details Inputs -->
+        <input type="text" id="first_name" placeholder="First Name">
+        <input type="text" id="last_name" placeholder="Last Name">
+        <input type="text" id="zid" placeholder="ZID">
+        <input type="email" id="owner_email" placeholder="Owner Email">
+
+        <!-- Subject Run Config Inputs -->
+        <div>
+            <label><input type="radio" name="frequency" value="Daily" checked> Daily</label>
+            <label><input type="radio" name="frequency" value="Weekly"> Weekly</label>
+            <label><input type="radio" name="frequency" value="Monthly"> Monthly</label>
+            <input type="number" id="weekly_day_number" placeholder="Weekly Day Number">
+            <input type="number" id="monthly_day_number" placeholder="Monthly Day Number">
+        </div>
+    </form>
+
+    <div id="status_logs" style="height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>
+    <progress id="progress_bar" value="0" max="100" style="width: 100%; margin-top: 10px;"></progress>
+
+    <button onclick="submitEnrollment()">Submit Enrollment</button>
+</body>
+</html>
