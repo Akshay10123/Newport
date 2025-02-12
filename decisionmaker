@@ -1,0 +1,26 @@
+let formData = {
+    decision_maker: isDecisionMakerPartOfFlow() ? {} : null, // Dynamically include/exclude Decision Maker
+};
+
+// Helper function to determine if Decision Maker is part of the flow
+function isDecisionMakerPartOfFlow() {
+    // Example logic: Check against current operational flow
+    const currentFlow = document.getElementById("current_flow").value; // Assume current flow is set in a hidden field
+    return currentFlow === "flow1" || currentFlow === "flow2"; // Decision Maker only applies to these flows
+}
+
+if (formData.decision_maker) {
+    apiCalls.push(callApi(
+        "Decision Maker",
+        apiUrls.other_modules,
+        {
+            SUBJECT_ID: zid, // Subject ID
+            STEP_NUMBER: 40, // Decision Maker step number
+            METHOD_NAME: "DECISION_MAKER",
+            SUBJECT_ARGUMENTS: {} // Always empty
+        },
+        updateProgress
+    ));
+}
+
+<input type="hidden" id="current_flow" value="flow1">
