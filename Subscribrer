@@ -1,0 +1,110 @@
+{% if "communicator" in modules %}
+<div class="module">
+    <h3>Communicator</h3>
+
+    <!-- Add Subscriber Button -->
+    <button type="button" onclick="addSubscriberForm()">Add Subscriber</button>
+
+    <!-- Subscriber Forms Container -->
+    <div id="subscriber_forms_container"></div>
+</div>
+{% endif %}
+
+<script>
+// Add a new subscriber form
+function addSubscriberForm() {
+    const container = document.getElementById("subscriber_forms_container");
+
+    // Create a unique ID for the form
+    const formId = `subscriber_form_${Date.now()}`;
+
+    // Create the form container
+    const formDiv = document.createElement("div");
+    formDiv.className = "subscriber-form module";
+    formDiv.id = formId;
+
+    // Add form fields for the subscriber
+    formDiv.innerHTML = `
+        <label>Subscriber First Name <span class="required">*</span></label>
+        <input type="text" class="full-width subscriber-first-name" required>
+
+        <label>Subscriber Last Name <span class="required">*</span></label>
+        <input type="text" class="full-width subscriber-last-name" required>
+
+        <label>Subscriber ZID <span class="required">*</span></label>
+        <input type="text" class="full-width subscriber-zid" maxlength="6" required 
+               oninput="validateZID(this)" onkeyup="this.value = this.value.toUpperCase();">
+        <p class="zid-error error-text"></p>
+
+        <label>Subscriber Email ID <span class="required">*</span></label>
+        <input type="email" class="full-width subscriber-email" required oninput="validateEmail(this)">
+        <p class="email-error error-text"></p>
+
+        <button type="button" onclick="removeSubscriberForm('${formId}')">Remove</button>
+    `;
+
+    // Append the form to the container
+    container.appendChild(formDiv);
+}
+
+// Remove a subscriber form
+function removeSubscriberForm(formId) {
+    const form = document.getElementById(formId);
+    if (form) {
+        form.remove();
+    }
+}
+
+// Extend validateZID and validateEmail for dynamic fields
+function validateZID(inputElement) {
+    const zid = inputElement.value.trim();
+    const zidError = inputElement.nextElementSibling; // Get the associated error text element
+
+    if (zid.length < 6) {
+        zidError.textContent = "ZID must be exactly 6 characters.";
+    } else {
+        zidError.textContent = ""; // Clear error if valid
+    }
+}
+
+function validateEmail(inputElement) {
+    const email = inputElement.value.trim();
+    const emailError = inputElement.nextElementSibling; // Get the associated error text element
+
+    // Regular expression for the required format: alphanumeric.alphanumeric@xyz.com
+    const emailRegex = /^[a-zA-Z0-9]+\.[a-zA-Z0-9]+@xyz\.com$/;
+
+    if (!emailRegex.test(email)) {
+        emailError.textContent = "Email must be in format: FirstName.LastName@xyz.com";
+    } else {
+        emailError.textContent = ""; // Clear error if valid
+    }
+}
+
+// Update the formData in submitEnrollment
+function submitEnrollment() {
+    // Existing formData code...
+
+    // Collect subscriber data dynamically
+    const subscribers = Array.from(document.querySelectorAll(".subscriber-form")).map(form => {
+        return {
+            first_name: form.querySelector(".subscriber-first-name").value.trim(),
+            last_name: form.querySelector(".subscriber-last-name").value.trim(),
+            zid: form.querySelector(".subscriber-zid").value.trim(),
+            email: form.querySelector(".subscriber-email").value.trim()
+        };
+    });
+
+    formData.communicator = subscribers;
+
+    console.log("Submitting Enrollment Data:", formData);
+
+    fetch('/submit_enrollment', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+    }).then(response => response.json())
+      .then(result => alert("Enrollment submitted successfully!"))
+      .catch(error => alert("Error submitting enrollment"));
+}
+</script>
