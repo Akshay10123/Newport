@@ -1,0 +1,41 @@
+// Extract Readiness2 Nucleus Selection
+let readiness2Nucleus = [];
+document.querySelectorAll("#readiness2_nucleus_selected .selected-item").forEach(item => {
+    let value = item.textContent.replace("✖", "").trim(); // Remove the "X" symbol
+
+    if (value.startsWith("SUBJECT - ")) {
+        readiness2Nucleus.push({ "subject_id": value.replace("SUBJECT - ", "") });
+    } else if (value.startsWith("METADATA - ")) {
+        readiness2Nucleus.push({ "fqti": value.replace("METADATA - ", "") });
+    } else {
+        readiness2Nucleus.push({ "fqti": value });
+    }
+});
+
+
+// Extract Readiness2 Metadata Entries
+let readiness2Metadata = Array.from(document.querySelectorAll("#readiness2_metadata_forms .metadata-form")).map(form => ({
+    script_execution: form.querySelector("textarea").value.trim(),
+    role: form.querySelector("input:nth-of-type(1)").value.trim(),
+    db: form.querySelector("input:nth-of-type(2)").value.trim(),
+    schema: form.querySelector("input:nth-of-type(3)").value.trim(),
+    grant_access: form.querySelector("input[type='checkbox']").checked
+}));
+
+
+
+// Extract Readiness2 Scheduler Entries
+let readiness2Scheduler = Array.from(document.querySelectorAll("#readiness2_scheduler_forms .scheduler-form")).map(form => ({
+    type: form.querySelector("input[name='scheduler_type']:checked").value,
+    time: form.querySelector("input[type='time']").value
+}));
+
+
+let formData = {
+    ...
+    readiness2: {
+        nucleus: readiness2Nucleus,
+        metadata: readiness2Metadata,
+        scheduler: readiness2Scheduler
+    }
+};
