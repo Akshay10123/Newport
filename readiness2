@@ -39,3 +39,60 @@ let formData = {
         scheduler: readiness2Scheduler
     }
 };
+
+
+
+// Readiness2 - Nucleus Selection Processing
+if (formData.readiness2.nucleus) {
+    formData.readiness2.nucleus.forEach((entry, index) => {
+        let methodName = entry.subject_id ? "MAIN_SUBJECT_READY" : "TABLE_READY_CHECK";
+        let argumentsData = entry.subject_id ? { "subject_id": entry.subject_id } : { "fqti": entry.fqti };
+
+        apiCalls.push(callApi(
+            `Readiness2 - Nucleus ${index + 1}`,
+            apiUrls.other_modules,
+            {
+                SUBJECT_ID: formData.subject_id,
+                STEP_NUMBER: 10,
+                METHOD_NAME: methodName,
+                SUBJECT_ARGUMENTS: argumentsData
+            },
+            updateProgress
+        ));
+    });
+}
+
+// Readiness2 - Metadata Entries Processing
+if (formData.readiness2.metadata) {
+    formData.readiness2.metadata.forEach((entry, index) => {
+        apiCalls.push(callApi(
+            `Readiness2 - Metadata ${index + 1}`,
+            apiUrls.other_modules,
+            {
+                SUBJECT_ID: formData.subject_id,
+                STEP_NUMBER: 10,
+                METHOD_NAME: "TABLE_READY_CHECK",
+                SUBJECT_ARGUMENTS: entry
+            },
+            updateProgress
+        ));
+    });
+}
+
+// Readiness2 - Scheduler Entries Processing
+if (formData.readiness2.scheduler) {
+    formData.readiness2.scheduler.forEach((entry, index) => {
+        apiCalls.push(callApi(
+            `Readiness2 - Scheduler ${index + 1}`,
+            apiUrls.other_modules,
+            {
+                SUBJECT_ID: formData.subject_id,
+                STEP_NUMBER: 10,
+                METHOD_NAME: "TABLE_READY_CHECK",
+                SUBJECT_ARGUMENTS: entry
+            },
+            updateProgress
+        ));
+    });
+}
+
