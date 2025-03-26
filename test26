@@ -1,0 +1,39 @@
+if (containerId.includes("posit")) {
+    formDiv.innerHTML = `
+        <label>Grant Access</label>
+        <input type="checkbox" class="grant-access-checkbox" checked>
+
+        <label>Content URL</label>
+        <input type="text" placeholder="Enter Content URL" class="full-width posit-url">
+
+        <label>Environment</label>
+        <div class="radio-group">
+            <label><input type="radio" name="connect_env_${Date.now()}" value="posit_os" checked> Posit Connect OS</label>
+            <label><input type="radio" name="connect_env_${Date.now()}" value="posit_cloud"> Posit Connect Cloud</label>
+        </div>
+
+        <button type="button" onclick="this.parentElement.remove()">Remove</button>
+    `;
+}
+
+posit: Array.from(document.querySelectorAll("#posit1_forms .orchestrator-form")).map(form => ({
+    grant_access: form.querySelector(".grant-access-checkbox").checked,
+    content_url: form.querySelector(".posit-url").value.trim(),
+    connect_env: form.querySelector("input[name^='connect_env_']:checked")?.value || null
+}))
+
+
+posit: Array.from(document.querySelectorAll("#posit2_forms .orchestrator-form")).map(form => ({
+    grant_access: form.querySelector(".grant-access-checkbox").checked,
+    content_url: form.querySelector(".posit-url").value.trim(),
+    connect_env: form.querySelector("input[name^='connect_env_']:checked")?.value || null
+}))
+
+{
+  "grant_access": true,
+  "content_url": "https://posit.example.com/content/xyz",
+  "connect_env": "posit_os"  // or "posit_cloud"
+}
+
+
+
