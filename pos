@@ -95,4 +95,46 @@ if job_id:
     poll_job_status(content_guid, job_id)
 
 
+import os
+import requests
+import time
+
+def track_task(task_id):
+    server = os.getenv('CONNECT_SERVER')
+    api_key = os.getenv('CONNECT_API_KEY')
+    endpoint = f"{server}__api__/v1/tasks/{task_id}"
+
+    headers = {
+        'Authorization': f"Key {api_key}"
+    }
+
+    while True:
+        response = requests.get(endpoint, headers=headers)
+
+        if response.status_code == 200:
+            task_info = response.json()
+            status = task_info.get('status')
+            finished = task_info.get('finished')
+            messages = task_info.get('messages', [])
+
+            print(f"Status: {status}")
+            for msg in messages:
+                print(f"- {msg.get('message')}")
+
+            if finished:
+                print(f"Task finished with status: {status}")
+                if status == "success":
+                    content_guid = task_info.get('result', {}).get('guid')
+                    print(f"Deployed content GUID: {content_guid}")
+                break
+        else:
+            print(f"Error {response.status_code}: {response.text}")
+            break
+
+        time.sleep(5)
+
+# Example usage
+task_id = 'your_task_id_here'
+track_task(task_id)
+
 
