@@ -51,3 +51,48 @@ try:
     print(job_status)
 except Exception as e:
     print(str(e))
+
+
+def run_job(content_guid):
+    server = os.getenv('CONNECT_SERVER')
+    api_key = os.getenv('CONNECT_API_KEY')
+    endpoint = f"{server}__api__/v1/content/{content_guid}/jobs"
+
+    headers = {
+        'Authorization': f"Key {api_key}",
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.post(endpoint, headers=headers)
+
+    if response.status_code == 202:
+        job_info = response.json()
+        job_id = job_info.get('id')
+        print(f"Job triggered successfully. Job ID: {job_id}")
+        return job_id
+    else:
+        print(f"Failed to start job: {response.status_code} {response.text}")
+        return None
+
+
+import time
+
+def poll_job_status(content_guid, job_id, poll_interval=5):
+    while True:
+        status = get_job_status(content_guid, job_id)
+        if status:
+            job_status = status.get('status')
+            print(f"Current status: {job_status}")
+            if job_status in ['finished', 'failed']:
+                break
+        time.sleep(poll_interval)
+
+
+content_guid = 'your_content_guid_here'
+job_id = run_job(content_guid)
+
+if job_id:
+    poll_job_status(content_guid, job_id)
+
+
+
