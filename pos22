@@ -1,0 +1,46 @@
+import os
+import requests
+import time
+
+def deploy_and_track():
+    server = os.getenv('CONNECT_SERVER')
+    api_key = os.getenv('CONNECT_API_KEY')
+    deploy_url = f"{server}__api__/v1/deploy"  # Replace with actual deploy endpoint if different
+
+    headers = {
+        'Authorization': f"Key {api_key}",
+        'Content-Type': 'application/json'
+    }
+
+    # Start a persistent session to retain cookies
+    session = requests.Session()
+    session.headers.update(headers)
+
+    # Trigger the deployment (this is just a placeholder – replace with real deploy logic)
+    response = session.post(deploy_url, json={
+        "name": "my_content",  # Example fields
+        "title": "My App"
+    })
+
+    if response.status_code != 202:
+        print(f"Failed to deploy: {response.status_code} {response.text}")
+        return
+
+    task_id = response.json().get("task_id")
+    print(f"Deployment started. Task ID: {task_id}")
+
+    # Now poll the task status with the same session (cookies preserved)
+    task_url = f"{server}__api__/v1/tasks/{task_id}"
+
+    while True:
+        task_response = session.get(task_url)
+        if task_response.status_code == 200:
+            task = task_response.json()
+            print(f"Status: {task['status']}")
+            if task['finished']:
+                print("Task finished.")
+                break
+        else:
+            print(f"Error {task_response.status_code}: {task_response.text}")
+            break
+        time.sleep(5)
