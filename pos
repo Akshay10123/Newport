@@ -1,0 +1,53 @@
+import os
+
+os.environ['CONNECT_SERVER'] = 'https://connect.example.com/'
+os.environ['CONNECT_API_KEY'] = 'your_api_key_here'
+
+
+
+import os
+import requests
+
+def get_job_status(content_guid, job_id):
+    """
+    Retrieve the status of a specific job in Posit Connect.
+
+    Parameters:
+    - content_guid: The GUID of the content item.
+    - job_id: The ID of the job.
+
+    Returns:
+    - A dictionary containing job details, including status.
+    """
+    # Retrieve server URL and API key from environment variables
+    server = os.getenv('CONNECT_SERVER')
+    api_key = os.getenv('CONNECT_API_KEY')
+
+    # Construct the API endpoint URL
+    endpoint = f"{server}__api__/v1/content/{content_guid}/jobs/{job_id}"
+
+    # Set up the authorization header
+    headers = {
+        'Authorization': f"Key {api_key}"
+    }
+
+    # Make the GET request to the API
+    response = requests.get(endpoint, headers=headers)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        job_details = response.json()
+        return job_details
+    else:
+        # Handle errors (e.g., job not found, unauthorized access)
+        error_message = response.json().get('error', 'An error occurred')
+        raise Exception(f"Error {response.status_code}: {error_message}")
+
+# Example usage:
+content_guid = 'your_content_guid_here'
+job_id = 'your_job_id_here'
+try:
+    job_status = get_job_status(content_guid, job_id)
+    print(job_status)
+except Exception as e:
+    print(str(e))
